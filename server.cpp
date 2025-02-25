@@ -1,4 +1,4 @@
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 #include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -98,13 +98,13 @@ Conn *handle_accept(int fd)
     int cd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
 
     if(cd < 0)
-        return NULL;
-
-     uint32_t ip = client_addr.sin_addr.s_addr;
-    // printf("new client from %u.%u.%u.%u:%u\n",
-    //     ip & 255, (ip >> 8) & 255, (ip >> 16) & 255, ip >> 24,
-    //     ntohs(client_addr.sin_port)
-    // );
+       return NULL;
+    
+    uint32_t ip = client_addr.sin_addr.s_addr;
+    printf("new client from %u.%u.%u.%u:%u\n",
+        ip & 255, (ip >> 8) & 255, (ip >> 16) & 255, ip >> 24,
+        ntohs(client_addr.sin_port)
+    );
 
     fd_set_nb(cd);
 
@@ -216,6 +216,7 @@ static void do_get(std::vector<std::string> &cmd, Buffer &out) {
 static void do_set(std::vector<std::string> &cmd, Buffer &out) {
     Entry key = {};
     key.key.swap(cmd[1]);
+
     //key.value.swap(cmd[2]);
 
     //get hash to search the hashtable
@@ -313,6 +314,7 @@ static int32_t parse_req(const uint8_t *data, size_t size, std::vector<std::stri
         {
             return -1;
         }
+        cout<< data << "\n";
         out.push_back(std::string());
         if(!read_str(data, end, len, out.back()))
             return -1;
@@ -350,6 +352,7 @@ static bool one_request(Conn *conn)
         return false;   // want read
     }
     uint32_t len = 0;
+    // len = ((conn->incoming[0] << 12) | (conn->incoming[1]<<8) | (conn->incoming[2] << 4)| (conn->incoming[3]));  // Read Length (2 bytes)
     memcpy(&len, conn->incoming.data(), 4);
 
       // message body
@@ -357,14 +360,17 @@ static bool one_request(Conn *conn)
         return false;   // want read
     }
 
+
     if(len > MAX_LEN)
     {
         cout << "Msg too long" << len << " "<<conn->incoming.data() << " \n";
         conn->want_close = true;
         return false;
     }
+
     const uint8_t *request = &conn->incoming[4];
 
+    
     std::vector<std::string> cmd;
     if(parse_req(request, len, cmd) < 0)
     {
@@ -374,7 +380,7 @@ static bool one_request(Conn *conn)
     }
     size_t header_pos = 0;
     //First 4 bytes - contains the total length.
-    
+
     response_begin(conn->outgoing, &header_pos);
     //This needs to be searched in database
     handle_request(cmd, conn->outgoing);
@@ -390,6 +396,7 @@ static bool one_request(Conn *conn)
 static void handle_write(Conn *conn)
 {
     assert(conn->outgoing.size() > 0);
+
     ssize_t ret = write(conn->fd, &conn->outgoing[0], conn->outgoing.size());
 
     if(ret < 0 && errno == EAGAIN)
@@ -421,6 +428,7 @@ static void handle_read(Conn *conn)
     uint8_t rbuf[4 + MAX_LEN + 1];
     ssize_t ret = read(conn->fd, rbuf, sizeof(rbuf));
 
+    
     if(ret < 0 && errno == EAGAIN)
     {
         cout << "Error inb read \n";
@@ -446,7 +454,6 @@ static void handle_read(Conn *conn)
     buf_append(conn->incoming, rbuf, (size_t)ret);
 
     while(one_request(conn)){}
-
     if(conn->outgoing.size() > 0)
     {
         conn->want_read = false;
@@ -475,7 +482,7 @@ int main() {
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(1535);
+	server_addr.sin_port = htons(2000);
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	
 	//why bind??
@@ -529,12 +536,14 @@ int main() {
             //cout << errno <<"Error \n";
             return 0;
         }   
+
         //handle the listening socket
         if (poll_args[0].revents)
         {
             Conn *conn = handle_accept(fd);
             if(conn)
             {
+
                 if (fd2conn.size() <= (size_t)conn->fd) 
                     fd2conn.resize(conn->fd + 1);
                 assert(!fd2conn[conn->fd]);
@@ -550,6 +559,7 @@ int main() {
             Conn *conn = fd2conn[poll_args[i].fd];
             if(!conn)
                 continue;
+            
             if(ready & POLLIN)
             {
                 assert(conn->want_read);

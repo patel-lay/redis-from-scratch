@@ -1,10 +1,12 @@
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 #include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include<vector>
 #include <string>
+#include <cassert>
+
 using namespace std;
 
 #define MAX_CONNECTIONS 128
@@ -151,7 +153,7 @@ static int32_t print_response(const uint8_t *data, size_t size) {
             {
             int64_t res = 0;
             memcpy(&res, &data[1], 4);
-            printf("(int) %ld\n", res);
+            printf("(int) %lld\n", res);
 
             return 1 + 8;
             }
@@ -264,7 +266,7 @@ int main(int argc, char **argv) {
 	    return 0;
 	}
 	client_addr.sin_family = AF_INET;
-	client_addr.sin_port = htons(1535);
+	client_addr.sin_port = htons(2000);
 	client_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	
 	//why bind??

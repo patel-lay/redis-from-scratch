@@ -1,14 +1,14 @@
 #include <iostream>
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 
 
 struct HNode{
-    HNode *next = NULL;
+    struct HNode *next = nullptr;
     uint64_t hashcode = 0; 
 };
 
 struct HTable{
-    HNode **tab = NULL;
+    HNode **tab = nullptr;
     size_t current_size = 0; //size of hashtable
     size_t mask = 0; //understand mask 
 
